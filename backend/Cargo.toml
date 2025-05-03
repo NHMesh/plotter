@@ -1,0 +1,17 @@
+[package]
+name = "revviewshed"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+axum = { version = "0.8.4", features = ["macros", "json"] }
+bytes = "1.10.1"
+gdal = { version = "0.15", features = ["bindgen"] }
+geo = "0.30.0"
+image = "0.25"
+palette = "0.5"
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.44.2", features = ["full"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }
