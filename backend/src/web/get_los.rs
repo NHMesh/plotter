@@ -1,7 +1,6 @@
 use axum::{Json, extract::State};
 use serde::Deserialize;
 use std::sync::{Arc, RwLock};
-//use tracing::info;
 use crate::map_segment::MapSegment;
 
 #[derive(Deserialize)]

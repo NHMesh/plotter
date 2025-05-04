@@ -16,6 +16,7 @@ pub async fn handler(
     State(ms): State<Arc<RwLock<MapSegment>>>,
     Json(payload): Json<ScanRequest>,
 ) -> Result<Json<bool>, axum::http::StatusCode> {
+    println!("Starting scan...");
     let mut ms = ms.write().map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let pixels = ms.scan_polygon(&payload.polygon);
@@ -28,8 +29,8 @@ pub async fn handler(
             payload.from_lon,
             to_lat,
             to_lon,
-            0.0,
-            0.0,
+            5.0,
+            10.0,
         );
 
         if has_los {

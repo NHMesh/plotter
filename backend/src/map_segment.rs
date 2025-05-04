@@ -137,11 +137,88 @@ impl MapSegment {
         self.img.put_pixel(
             x,
             y,
-            Rgba([ 0, 255, 0, 255 ]),
+            Rgba([ 252, 3, 248, 255 ]),
         );
     }
 
-    pub fn get_tile(&self, x: u32, y: u32, zoom: u8) -> RgbaImage {
+    pub fn get_tile_los<F>(&self, x: u32, y: u32, zoom: u8, observer_lat: f64, observer_lon: f64, mut tick: F)
+    where
+        F: FnMut(usize, usize, bool)
+    {
+        println!("\nGenerating Tile Data for x({}), y({}), zoom({})", x, y, zoom);
+        const TILE_SIZE: usize = 256;
+
+        let ((lat_north, lon_west),
+            (lat_south, lon_east)) = tile_bbox_latlon(x, y, zoom);
+
+        let (px_min, py_min) = self.latlon_to_pixel(lat_north, lon_west);
+        let (px_max, py_max) = self.latlon_to_pixel(lat_south, lon_east);
+
+        let step_size_x: f32 = ( px_max - px_min ) as f32 / TILE_SIZE as f32;
+        let step_size_y: f32 = ( py_max - py_min ) as f32 / TILE_SIZE as f32;
+
+        println!("step_size_x({}), step_size_y({})", step_size_x, step_size_y);
+
+        let px_min_f32 = px_min as f32;
+        let py_min_f32 = py_min as f32;
+        //let px_max_f32 = px_max as f32;
+        //let py_max_f32 = py_max as f32;
+
+        for x in 0..TILE_SIZE {
+            for y in 0..TILE_SIZE {
+                let source_x = px_min_f32 + ( x as f32 * step_size_x);
+                let source_y = py_min_f32 + (y as f32 * step_size_y);
+
+                let (lat, lon) = self.pixel_to_latlon(source_x.round() as usize, source_y.round() as usize);
+
+                let has_los = self.has_line_of_sight(
+                    observer_lat,
+                    observer_lon,
+                    lat,
+                    lon,
+                    1.0,
+                    1.0
+                );
+
+                tick(x, y, has_los);
+            }
+        }
+    }
+
+    pub fn get_tile_data<F>(&self, x: u32, y: u32, zoom: u8, mut tick: F)
+    where
+        F: FnMut(usize, usize, f32)
+    {
+        println!("\nGenerating Tile Data for x({}), y({}), zoom({})", x, y, zoom);
+        const TILE_SIZE: usize = 256;
+
+        let ((lat_north, lon_west),
+            (lat_south, lon_east)) = tile_bbox_latlon(x, y, zoom);
+
+        let (px_min, py_min) = self.latlon_to_pixel(lat_north, lon_west);
+        let (px_max, py_max) = self.latlon_to_pixel(lat_south, lon_east);
+
+        let step_size_x: f32 = ( px_max - px_min ) as f32 / TILE_SIZE as f32;
+        let step_size_y: f32 = ( py_max - py_min ) as f32 / TILE_SIZE as f32;
+
+        println!("step_size_x({}), step_size_y({})", step_size_x, step_size_y);
+
+        let px_min_f32 = px_min as f32;
+        let py_min_f32 = py_min as f32;
+        //let px_max_f32 = px_max as f32;
+        //let py_max_f32 = py_max as f32;
+
+        for x in 0..TILE_SIZE {
+            for y in 0..TILE_SIZE {
+                let source_x = px_min_f32 + ( x as f32 * step_size_x);
+                let source_y = py_min_f32 + (y as f32 * step_size_y);
+
+                tick(x, y, self.get_elevation(source_x.round() as usize, source_y.round() as usize).unwrap_or(0.0));
+            }
+        }
+    }
+
+    pub fn get_tile_img(&self, x: u32, y: u32, zoom: u8) -> RgbaImage {
         println!("\nRendering Tile x({}), y({}), zoom({})", x, y, zoom);
         let tile_size = 256;
         let ((lat_north, lon_west), (lat_south, lon_east)) = tile_bbox_latlon(x, y, zoom);
@@ -165,38 +242,39 @@ impl MapSegment {
         image::imageops::resize(&cropped, tile_size, tile_size, FilterType::Lanczos3)
     }
 
+#####
     pub fn has_line_of_sight(
         &self,
-        from_lat: f64,
-        from_lon: f64,
-        to_lat: f64,
-        to_lon: f64,
-        observer_height: f32,
-        target_height: f32,
+        from_lat: f64, // Latitude of the observer
+        from_lon: f64, // Longitude of the observer
+        to_lat: f64, // Latitude of the target
+        to_lon: f64, // Longitude of the target
+        observer_height: f32, // Height of the observer above ground
+        target_height: f32, // Height of the target above ground
     ) -> bool {
-        let (x0, y0) = self.latlon_to_pixel(from_lat, from_lon);
-        let (x1, y1) = self.latlon_to_pixel(to_lat, to_lon);
+        let (x0, y0) = self.latlon_to_pixel(from_lat, from_lon); // Convert observer's lat/lon to pixel coordinates
+        let (x1, y1) = self.latlon_to_pixel(to_lat, to_lon); // Convert target's lat/lon to pixel coordinates
 
-        let z0 = self.get_elevation(x0, y0).unwrap_or(0.0) + observer_height;
-        let z1 = self.get_elevation(x1, y1).unwrap_or(0.0) + target_height;
+        let z0 = self.get_elevation(x0, y0).unwrap_or(0.0) + observer_height; // Elevation at observer's position
+        let z1 = self.get_elevation(x1, y1).unwrap_or(0.0) + target_height; // Elevation at target's position
 
-        let dx = x1 as isize - x0 as isize;
-        let dy = y1 as isize - y0 as isize;
-        let steps = dx.abs().max(dy.abs());
+        let dx = x1 as isize - x0 as isize; // Difference in x-coordinates
+        let dy = y1 as isize - y0 as isize; // Difference in y-coordinates
+        let steps = dx.abs().max(dy.abs()); // Number of steps for interpolation
 
         for i in 1..steps {
-            let t = i as f32 / steps as f32;
-            let xi = x0 as f32 + t * dx as f32;
-            let yi = y0 as f32 + t * dy as f32;
-            let zi = z0 + t * (z1 - z0);
+            let t = i as f32 / steps as f32; // Interpolation factor
+            let xi = x0 as f32 + t * dx as f32; // Interpolated x-coordinate
+            let yi = y0 as f32 + t * dy as f32; // Interpolated y-coordinate
+            let zi = z0 + t * (z1 - z0); // Interpolated elevation
 
-            let elev = self.get_elevation(xi as usize, yi as usize).unwrap_or(0.0);
+            let elev = self.get_elevation(xi as usize, yi as usize).unwrap_or(0.0); // Elevation at interpolated position
             if elev > zi {
-                return false; // blocked
+                return false; // Line of sight is blocked
             }
         }
 
-        true
+        true // Line of sight is clear
     }
 
     fn latlon_to_pixel(&self, lat: f64, lon: f64) -> (usize, usize) {

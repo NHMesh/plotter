@@ -1,7 +1,8 @@
 use axum::{extract::{Path, State}, http::StatusCode, response::{IntoResponse, Response}};
 use std::{sync::{Arc, RwLock}, io::Cursor};
 use crate::map_segment::MapSegment;
-use image::{ImageFormat, RgbaImage, DynamicImage};
+use gdal::raster::Buffer;
+use image::{ImageFormat, RgbaImage, ImageBuffer, Rgba, DynamicImage};
 use bytes::Bytes;
 
 pub async fn handler(
@@ -13,15 +14,20 @@ pub async fn handler(
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
 
-    if z < 13 {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
+    let mut img: RgbaImage = ImageBuffer::from_pixel(256, 256, Rgba([255, 255, 255, 0]));
 
-    let tile: RgbaImage = ms.get_tile_img(x, y, z);
+    let lat = 43.184296;
+    let lon = -71.320451;
+
+    ms.get_tile_los(x, y, z, lat, lon, |x, y, has_los| {
+        if has_los {
+            img.put_pixel(x as u32, y as u32, Rgba([190, 0, 150, 255]));
+        }
+    });
 
     let mut buf = Cursor::new(Vec::new());
 
-    if DynamicImage::ImageRgba8(tile)
+    if DynamicImage::ImageRgba8(img)
         .write_to(&mut buf, ImageFormat::Png)
         .is_err()
     {
@@ -37,4 +43,9 @@ pub async fn handler(
         ],
         bytes
     ).into_response()
+}
+
+fn within_banded_range(n: f32, multiple: i32, buffer: f64) -> bool {
+    let remainder = ( n as f64 ) % multiple as f64;
+    remainder <= buffer || remainder >= ( multiple as f64 - buffer )
 }

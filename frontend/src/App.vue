@@ -1,8 +1,8 @@
 <template>
-  <div style="height:600px; width:800px">
-    <l-map ref="map" v-model:zoom="zoom" :center="[43.197167282501276, -71.455078125]"  @click="addMarker">
+  <div class="top">
+    <l-map ref="map" v-model:zoom="zoom" :center="[ 43.184296, -71.320451 ]"  @click="addMarker">
       <l-tile-layer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png"
         layer-type="base"
         name="OpenStreetMap"
       ></l-tile-layer>
@@ -10,9 +10,9 @@
       <l-marker v-for="marker, index in markers" :lat-lng="marker" @click="removeMarker(index)"></l-marker>
 
       <l-tile-layer
-        url="http://localhost:3000/tiles/{z}/{x}/{y}/tile.png"
+        url="http://localhost:3000/tiles_los/{z}/{x}/{y}/tile.png"
         layer-type="base"
-        opacity="0.5"
+        opacity="0.45"
         name="Elevation"
       ></l-tile-layer>
     </l-map>
@@ -52,9 +52,9 @@ export default {
   },
   data() {
     return {
-      zoom: 13,
+      zoom: 14,
       polyPoints: [],
-      markers: [ ]
+      markers: [{lat: 43.184296, lng: -71.320451} ]
     };
   },
 
@@ -94,8 +94,19 @@ export default {
     }
   }
 };
+
 </script>
 
 <style>
+.top {
+  position: relative;
+  height: calc(100% - 50px); /* Adjust height to leave space for buttons */
+}
 
+button {
+  width: 33.33%; /* Adjust width for three buttons */
+  height: 50px; /* Height of the button area */
+  float: left;
+  box-sizing: border-box;
+}
 </style>
