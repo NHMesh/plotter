@@ -1,7 +1,6 @@
 use axum::{extract::{Path, State}, http::StatusCode, response::{IntoResponse, Response}};
 use std::{sync::{Arc, RwLock}, io::Cursor};
 use crate::map_segment::MapSegment;
-use gdal::raster::Buffer;
 use image::{ImageFormat, RgbaImage, ImageBuffer, Rgba, DynamicImage};
 use bytes::Bytes;
 
@@ -43,9 +42,4 @@ pub async fn handler(
         ],
         bytes
     ).into_response()
-}
-
-fn within_banded_range(n: f32, multiple: i32, buffer: f64) -> bool {
-    let remainder = ( n as f64 ) % multiple as f64;
-    remainder <= buffer || remainder >= ( multiple as f64 - buffer )
 }

@@ -15,7 +15,7 @@ async fn main() {
     //tracing_subscriber::fmt::init();
 
     // Load DEM dataset and generate the base image
-    let mut ms = MapSegment::load_from_dataset("USGS_13_n44w072_20240617.tif")
+    let ms = MapSegment::load_from_dataset("USGS_13_n44w072_20240617.tif")
         .expect("Failed to load dataset");
 
     let ms = Arc::new(RwLock::new(ms));

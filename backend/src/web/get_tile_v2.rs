@@ -1,7 +1,6 @@
 use axum::{extract::{Path, State}, http::StatusCode, response::{IntoResponse, Response}};
 use std::{sync::{Arc, RwLock}, io::Cursor};
 use crate::map_segment::MapSegment;
-use gdal::raster::Buffer;
 use image::{ImageFormat, RgbaImage, ImageBuffer, Rgba, DynamicImage};
 use bytes::Bytes;
 
