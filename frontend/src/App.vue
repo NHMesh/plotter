@@ -10,11 +10,19 @@
       <l-marker v-for="marker, index in markers" :lat-lng="marker" @click="removeMarker(index)"></l-marker>
 
       <l-tile-layer
+        url="http://localhost:3000/tile_v3/{z}/{x}/{y}/tile.png"
+        layer-type="base"
+        opacity="0.45"
+        name="Elevation"
+      ></l-tile-layer>
+<!--
+      <l-tile-layer
         url="http://localhost:3000/tiles_los/{z}/{x}/{y}/tile.png"
         layer-type="base"
         opacity="0.45"
         name="Elevation"
       ></l-tile-layer>
+-->
     </l-map>
   </div>
   <button @click="selection" >Select Area</button>

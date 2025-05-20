@@ -3,6 +3,7 @@ pub mod run_scan;
 pub mod get_tile;
 pub mod get_tile_v2;
 pub mod get_tile_los;
+pub mod get_tile_v3;
 
 use std::sync::{Arc, RwLock};
 use crate::map_segment::MapSegment;
@@ -16,6 +17,7 @@ pub fn router(ms: Arc<RwLock<MapSegment>>) -> Router {
         .route("/tiles_rf/{z}/{x}/{y}/tile.png", get(get_tile::handler))
         .route("/tiles_los/{z}/{x}/{y}/tile.png", get(get_tile_los::handler))
         .route("/tiles/{z}/{x}/{y}/tile.png", get(get_tile_v2::handler))
+        .route("/tile_v3/{z}/{x}/{y}/tile.png", get(get_tile_v3::handler))
         .route("/los", post(get_los::handler))
         .route("/scan", post(run_scan::handler))
         .route("/", axum::routing::get(|| async { "Hello, World!" }))
