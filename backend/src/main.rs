@@ -2,26 +2,29 @@
 
 mod map_segment;
 mod web;
+mod los_map;
+mod world_grid;
 
 use std::sync::{Arc, RwLock};
 use tower_http::cors::CorsLayer;
 //use tracing_subscriber;
-use map_segment::MapSegment;
 use web::router;
+use crate::world_grid::WorldGrid;
 
 #[tokio::main]
 async fn main() {
     // Set up logging
     //tracing_subscriber::fmt::init();
 
-    // Load DEM dataset and generate the base image
-    let ms = MapSegment::load_from_dataset("USGS_13_n44w072_20240617.tif")
-        .expect("Failed to load dataset");
+    // Load DEM datasets and generate the base images
+    let mut world = WorldGrid::new();
+    world.load_segment("USGS_13_n44w072_20240617.tif").expect("Failed to load segment 1");
+    world.load_segment("USGS_13_n43w072_20240130.tif").expect("Failed to load segment 2");
 
-    let ms = Arc::new(RwLock::new(ms));
+    let world = Arc::new(RwLock::new(world));
 
     // Build the application router
-    let app = router(ms).layer(CorsLayer::permissive());
+    let app = router(world).layer(CorsLayer::permissive());
 
     // Start the Axum server
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

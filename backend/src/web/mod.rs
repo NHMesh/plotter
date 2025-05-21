@@ -6,13 +6,13 @@ pub mod get_tile_los;
 pub mod get_tile_v3;
 
 use std::sync::{Arc, RwLock};
-use crate::map_segment::MapSegment;
+use crate::world_grid::WorldGrid;
 use axum::{
     routing::{get, post},
     Router
 };
 
-pub fn router(ms: Arc<RwLock<MapSegment>>) -> Router {
+pub fn router(world: Arc<RwLock<WorldGrid>>) -> Router {
     Router::new()
         .route("/tiles_rf/{z}/{x}/{y}/tile.png", get(get_tile::handler))
         .route("/tiles_los/{z}/{x}/{y}/tile.png", get(get_tile_los::handler))
@@ -21,6 +21,6 @@ pub fn router(ms: Arc<RwLock<MapSegment>>) -> Router {
         .route("/los", post(get_los::handler))
         .route("/scan", post(run_scan::handler))
         .route("/", axum::routing::get(|| async { "Hello, World!" }))
-        .with_state(ms)
+        .with_state(world)
 }
 

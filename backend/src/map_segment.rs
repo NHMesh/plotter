@@ -13,7 +13,6 @@ pub struct MapSegment {
     pub height: usize,
     pub height_map: Buffer<f32>,
     pub img: RgbaImage,
-    pub los_map: Option<Vec<bool>>,
 }
 
 impl MapSegment {
@@ -46,7 +45,6 @@ impl MapSegment {
             height,
             height_map,
             img,
-            los_map: None,
         })
     }
 
@@ -278,50 +276,15 @@ impl MapSegment {
         true // Line of sight is clear
     }
 
-    /// Efficiently generate a line-of-sight map from the observer (in lat/lon) out to a given radius (in pixels)
-    /// Now accounts for Earth's curvature.
-    pub fn generate_los_map(&mut self, observer_lat: f64, observer_lon: f64, radius: usize, observer_height: f32) {
-        let mut los_map = vec![false; self.width * self.height];
-        let (obs_px, obs_py) = self.latlon_to_pixel(observer_lat, observer_lon);
-        let obs_elev = self.get_elevation(obs_px, obs_py).unwrap_or(0.0) + observer_height;
+    pub fn generate_los_map(&mut self, _observer_lat: f64, _observer_lon: f64, _radius: usize, _observer_height: f32) {
+        // Stub: los_map logic moved to WorldGrid
+    }
 
-        // Constants for Earth's curvature
-        const EARTH_RADIUS_M: f64 = 6_371_000.0; // meters
-        let pixel_size_m = self.pixel_width.hypot(self.pixel_height).abs(); // crude average pixel size in meters
-
-        // Cast rays in all directions from the observer
-        let num_rays = 360.max(radius * 8); // More rays for larger radius
-        for angle_step in 0..num_rays {
-            let theta = (angle_step as f64) * std::f64::consts::TAU / (num_rays as f64);
-            let dx = theta.cos();
-            let dy = theta.sin();
-            let mut max_angle = std::f32::NEG_INFINITY;
-            for r in 1..=radius {
-                let xi = obs_px as f64 + dx * r as f64;
-                let yi = obs_py as f64 + dy * r as f64;
-                let x = xi.round() as isize;
-                let y = yi.round() as isize;
-                if x < 0 || y < 0 || x >= self.width as isize || y >= self.height as isize {
-                    break;
-                }
-                let x = x as usize;
-                let y = y as usize;
-                let idx = y * self.width + x;
-                let elev = self.get_elevation(x, y).unwrap_or(0.0);
-                let dist_m = (r as f64) * pixel_size_m;
-                // Drop due to Earth's curvature (in meters)
-                let curvature_drop = dist_m * dist_m / (2.0 * EARTH_RADIUS_M);
-                // Adjusted elevation at this point
-                let adj_elev = elev - curvature_drop as f32;
-                let dist = dist_m as f32;
-                let angle = if dist > 0.0 { (adj_elev - obs_elev) / dist } else { std::f32::NEG_INFINITY };
-                if angle > max_angle {
-                    los_map[idx] = true;
-                    max_angle = angle;
-                }
-            }
-        }
-        self.los_map = Some(los_map);
+    pub fn generate_los_map_for_world<'a, F>(&mut self, _segment_lookup: F, _observer_lat: f64, _observer_lon: f64, _radius: usize, _observer_height: f32)
+    where
+        F: Fn(f64, f64) -> Option<&'a MapSegment>,
+    {
+        // Stub: los_map logic moved to WorldGrid
     }
 
     pub fn latlon_to_pixel(&self, lat: f64, lon: f64) -> (usize, usize) {
@@ -337,7 +300,7 @@ impl MapSegment {
         (lat, lon)
     }
 
-    fn get_elevation(&self, x: usize, y: usize) -> Option<f32> {
+    pub fn get_elevation(&self, x: usize, y: usize) -> Option<f32> {
         if x < self.width && y < self.height {
             let i = y * self.width + x;
             Some(self.height_map.data[i])
