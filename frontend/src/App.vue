@@ -95,7 +95,7 @@ export default {
       let res = await axios.post('http://localhost:3000/scan', {
         from_lat: this.markers[0].lat,
         from_lon: this.markers[0].lng,
-        radius: 4000,
+        radius: 1000,
         observer_height: 10
       });
 

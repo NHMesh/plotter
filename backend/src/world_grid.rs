@@ -34,8 +34,7 @@ impl WorldGrid {
         observer_height: f32,
     ) -> usize
     {
-        let mut los_map = LosMap::new(radius, radius);
-        los_map.generate(self, observer_lat, observer_lon, radius, observer_height);
+        let los_map = LosMap::new(self, observer_lat, observer_lon, radius, observer_height);
         self.los_maps.push(los_map);
         self.los_maps.len() - 1
     }
